@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Mic, Home, RotateCw } from "lucide-react";
 import { Button } from "../components/Button";
 import { Mascot } from "../components/Mascot";
 import { Confetti } from "../components/Confetti";
 import { getFeedbackMessage, getRandomSentence } from "../utils/feedback";
+import { fetchSentences } from "../api/sentences";
+import { analyzeAudio } from "../api/analyzeAudio";
 
 interface ReadAloudProps {
   onNavigate: (page: string) => void;
@@ -14,24 +16,108 @@ export const ReadAloud = ({
   onNavigate,
   onExerciseComplete,
 }: ReadAloudProps) => {
-  const [sentence, setSentence] = useState(getRandomSentence());
+  const [sentence, setSentence] = useState<string>("");
+  const [sentencesData, setSentencesData] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [hasResult, setHasResult] = useState(false);
   const [accuracy, setAccuracy] = useState(0);
   const [feedback, setFeedback] = useState(getFeedbackMessage(0));
+  const [audioURL, setAudioURL] = useState<string | null>(null);
 
-  const handleRecord = () => {
-    setIsRecording(true);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
 
-    setTimeout(() => {
+  useEffect(() => {
+    async function loadSentences() {
+      const data = await fetchSentences();
+      if (data) {
+        setSentencesData(data);
+        const levels = Object.keys(data);
+        const randomLevel = levels[Math.floor(Math.random() * levels.length)];
+        setSentence(data[randomLevel].text);
+      }
+    }
+    loadSentences();
+  }, []);
+
+  // const handleRecord = () => {
+  //   setIsRecording(true);
+
+  //   setTimeout(() => {
+  //     setIsRecording(false);
+  //     const randomAccuracy = Math.floor(Math.random() * 30) + 70;
+  //     setAccuracy(randomAccuracy);
+  //     const newFeedback = getFeedbackMessage(randomAccuracy);
+  //     setFeedback(newFeedback);
+  //     setHasResult(true);
+  //     onExerciseComplete();
+  //   }, 2000);
+  // };
+
+  const handleRecord = async () => {
+    // if already recording, stop and process
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
       setIsRecording(false);
-      const randomAccuracy = Math.floor(Math.random() * 30) + 70;
-      setAccuracy(randomAccuracy);
-      const newFeedback = getFeedbackMessage(randomAccuracy);
-      setFeedback(newFeedback);
-      setHasResult(true);
-      onExerciseComplete();
-    }, 2000);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // store the recorder so we can stop it later
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunks.current = [];
+
+      // collect audio data chunks as they become available
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
+      };
+
+      // when recording stops, process and send audio
+      mediaRecorder.onstop = async () => {
+        // stop the audio input stream as well
+        stream.getTracks().forEach((track) => track.stop());
+
+        const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
+        const audioFile = new File([audioBlob], "recording.webm", {
+          type: "audio/webm",
+        });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setAudioURL(audioUrl);
+
+        try {
+          const result = await analyzeAudio(audioFile, sentence);
+
+          if (result) {
+            const { targetText, rawText, score } = result;
+            console.log("✅ Text corect:", targetText);
+            console.log("🎙️ Text rostit:", rawText);
+            console.log("📊 Scor:", score);
+
+            setAccuracy(score);
+            const newFeedback = getFeedbackMessage(score);
+            setFeedback(newFeedback);
+            setHasResult(true);
+            onExerciseComplete();
+          } else {
+            alert("Eroare: nu s-a putut analiza audio-ul.");
+          }
+        } catch (err) {
+          console.error("Eroare la analiză:", err);
+        }
+      };
+
+      // start recording
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Accesul la microfon a fost refuzat sau a eșuat:", error);
+      alert("Nu pot accesa microfonul. Verifică permisiunile browserului.");
+    }
   };
 
   const handleTryAgain = () => {
@@ -101,7 +187,7 @@ export const ReadAloud = ({
               <div className="flex justify-center">
                 <button
                   onClick={handleRecord}
-                  disabled={isRecording}
+                  //disabled={isRecording}
                   className={`w-24 h-24 rounded-full shadow-2xl flex items-center justify-center transform transition-all duration-300 ${
                     isRecording
                       ? "bg-red-500 animate-pulse scale-110"
