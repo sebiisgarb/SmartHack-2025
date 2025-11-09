@@ -3,7 +3,7 @@ import { Student } from "../types";
 export const mockStudents: Student[] = [
   {
     id: "1",
-    name: "Maria Popescu",
+    name: "Mary Parker",
     age: 7,
     totalExercises: 45,
     successfulExercises: 38,
@@ -12,7 +12,7 @@ export const mockStudents: Student[] = [
   },
   {
     id: "2",
-    name: "Andrei Ionescu",
+    name: "Andrew Johnson",
     age: 8,
     totalExercises: 52,
     successfulExercises: 47,
@@ -21,7 +21,7 @@ export const mockStudents: Student[] = [
   },
   {
     id: "3",
-    name: "Ioana Radu",
+    name: "Joanna Reed",
     age: 6,
     totalExercises: 28,
     successfulExercises: 21,
@@ -30,7 +30,7 @@ export const mockStudents: Student[] = [
   },
   {
     id: "4",
-    name: "Mihai Dumitrescu",
+    name: "Michael Davis",
     age: 9,
     totalExercises: 67,
     successfulExercises: 61,
@@ -39,7 +39,7 @@ export const mockStudents: Student[] = [
   },
   {
     id: "5",
-    name: "Elena Marin",
+    name: "Ellen Martin",
     age: 7,
     totalExercises: 39,
     successfulExercises: 32,

@@ -7,8 +7,15 @@ class Student(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
 
-class Sentence(Base):
-    __tablename__ = "sentences"
+class Sentence_tts(Base):
+    __tablename__ = "sentences_tts"
+    id = Column(Integer, primary_key=True)
+    text = Column(Text)
+    level = Column(String(10))
+    # audio_url = Column(Text)
+
+class Sentence_stt(Base):
+    __tablename__ = "sentences_stt"
     id = Column(Integer, primary_key=True)
     text = Column(Text)
     level = Column(String(10))

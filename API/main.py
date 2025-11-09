@@ -1,4 +1,5 @@
 from http.client import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 import openai
 from fastapi import FastAPI, UploadFile, File, Form, Depends
@@ -23,6 +24,13 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.add_middleware(
+CORSMiddleware,
+allow_origins=["*"],
+allow_credentials=True,
+allow_methods=["*"],
+allow_headers=["*"],
+)
 models.Base.metadata.create_all(bind=engine)
 
 client = Client("radu1633/learning-STT-RO")
@@ -37,9 +45,16 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-@app.get("/sentences")
+@app.get("/sentences_stt")
 async def get_sentences(db: Session = Depends(get_db)):
-    result = db.query(models.Sentence).all()
+    result = db.query(models.Sentence_stt).all()
+    if not result:
+        raise 'Nothing Found'
+    return result
+
+@app.get("/sentences_tts")
+async def get_sentences(db: Session = Depends(get_db)):
+    result = db.query(models.Sentence_tts).all()
     if not result:
         raise 'Nothing Found'
     return result
@@ -58,7 +73,7 @@ async def analyze_audio(
         result = client.predict(
             input_path=handle_file(tmp_path),
             target_text=target_text,
-            api_name="/analyze_audio"
+            api_name="/analyze_audio_en"
         )
 
         os.remove(tmp_path)
@@ -138,23 +153,109 @@ async def teacher_report(
 def health():
     return {"status": "ok"}
 
+from fastapi import Body
 
-from fastapi.responses import FileResponse
-
-@app.post("/generate_audio")
-async def generate_audio(
-    text: str = Form(..., description="Textul pe care modelul îl va rosti în limba română")
-):
+@app.post("/submit_results")
+async def submit_results(payload: dict = Body(...)):
     """
-    Generează un fișier audio (MP3) în limba română, folosind modelul gpt-4o-mini-tts.
-    Textul va fi rostit clar, fără traduceri sau englezisme.
+    Receives all exercise results (3 STT + 3 TTS) for a student,
+    analyzes them with GPT, and returns a summarized teacher report.
     """
     try:
+        student_id = payload.get("student_id", "unknown_student")
+        results = payload.get("results", [])
 
+        if not results or len(results) < 6:
+            return JSONResponse(
+                content={"error": "You must submit all 6 exercises (3 STT + 3 TTS)."},
+                status_code=400
+            )
+
+        # Build a text summary for GPT
+        text_summary = f"Performance report for student {student_id}:\n"
+        for i, r in enumerate(results, 1):
+            if r["type"] == "stt":
+                text_summary += (
+                    f"\nExercise {i} (Read Aloud):\n"
+                    f" - Target sentence: {r['sentence']}\n"
+                    f" - Spoken text: {r.get('spokenText', '')}\n"
+                    f" - Score: {r['score']}%\n"
+                )
+            elif r["type"] == "tts":
+                text_summary += (
+                    f"\nExercise {i} (Listen & Write):\n"
+                    f" - Target sentence: {r['sentence']}\n"
+                    f" - Written text: {r.get('writtenText', '')}\n"
+                    f" - Score: {r['score']}%\n"
+                )
+
+        # GPT prompt
+        prompt = f"""
+You are an English teacher for young learners.
+You are analyzing a student's results from reading aloud (STT) and listening/writing (TTS) exercises.
+
+Here are the detailed results:
+{text_summary}
+
+Create a concise JSON report with this exact structure:
+
+{{
+  "summary": "general performance summary",
+  "global_score": "average of all scores (%)",
+  "errors_summary": "brief explanation of the most common errors (phonetic, spelling, omissions, etc.)",
+  "recommendations": "specific short exercises or activities to improve performance"
+}}
+
+Write everything in clear, natural English.
+Do not include any text outside the JSON.
+        """
+
+        ai_response = openai_client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role": "system", "content": (
+                    "You are an expert English teacher who provides structured feedback for young learners. "
+                    "Always respond strictly in JSON format as requested."
+                )},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.6,
+            response_format={"type": "json_object"},
+        )
+
+        raw_report = ai_response.choices[0].message.content
+        report = json.loads(raw_report)
+
+        print("📘 Teacher report generated:")
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+
+        return JSONResponse(content=report)
+
+    except Exception as e:
+        print("❌ Error in /submit_results:", e)
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+from fastapi import FastAPI, Form
+from fastapi.responses import FileResponse
+import tempfile
+from openai import OpenAI
+
+openai_client = OpenAI()
+
+@app.post("/generate_audio")
+async def generate_audio_en(
+    text: str = Form(..., description="Text to be spoken clearly in English")
+):
+    """
+    Generates an English audio file (MP3) using the GPT-4o-mini-tts model.
+    The text will be spoken naturally and clearly, without translations.
+    """
+    try:
+        # Creăm fișierul audio temporar
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_audio:
             response = openai_client.audio.speech.create(
                 model="gpt-4o-mini-tts",
-                voice='alloy',
+                voice="alloy",  # Poți încerca și 'verse', 'coral', 'luna'
                 input=text,
             )
             tmp_audio.write(response.read())
@@ -163,7 +264,7 @@ async def generate_audio(
         return FileResponse(
             tmp_path,
             media_type="audio/mpeg",
-            filename="tts_romana.mp3"
+            filename="tts_english.mp3"
         )
 
     except Exception as e:

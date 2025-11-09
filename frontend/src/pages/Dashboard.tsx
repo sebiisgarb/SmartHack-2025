@@ -6,9 +6,10 @@ import { StudentModal } from "../components/StudentModal";
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
+  reports?: any[];
 }
 
-export const Dashboard = ({ onNavigate }: DashboardProps) => {
+export const Dashboard = ({ onNavigate, reports = [] }: DashboardProps) => {
   const totalStudents = mockStudents.length;
   const avgAccuracy = Math.round(
     mockStudents.reduce((sum, s) => sum + s.averageAccuracy, 0) / totalStudents
@@ -22,25 +23,22 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
   const [analysisData, setAnalysisData] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const mockAnalysis = {
-    summary:
-      "Elevul a obținut un scor de pronunție de 85.71%, ceea ce indică o bună înțelegere a limbii, dar există erori care trebuie corectate pentru a îmbunătăți pronunția.",
-    errors: [
-      {
-        expected: "Pisica",
-        spoken: "Pisca",
-        type: "eroare fonetică",
-        tip: "Elevul a omis sunetul 'i' și a înlocuit 's' cu 'sc', ceea ce a dus la o confuzie în pronunțarea corectă a cuvântului.",
-      },
-      {
-        expected: "doarme",
-        spoken: "dorme",
-        type: "eroare fonetică",
-        tip: "Elevul a omis sufixul '-a' din forma verbală, ceea ce a dus la o pronunție incompletă a verbului.",
-      },
-    ],
-    suggested_exercises:
-      "1. Exerciții de pronunție pentru sunetele 'i' și 's' - repetarea cuvintelor precum 'pisică', 'să' și 'scăunel'.\n2. Exerciții de conjugare a verbelor la prezent, cu accent pe forma corectă a acestora.\n3. Jocuri de cuvinte care implică cuvinte similare fonetic, pentru a ajuta elevul să distingă între sunetele similare.",
+  const normalizeReport = (rawReport: any) => {
+    if (!rawReport) return null;
+
+    return {
+      summary: rawReport.summary || "General report not available.",
+      errors: [
+        {
+          expected: "–",
+          spoken: rawReport.errors_summary || "No errors detected.",
+          type: "General phonetic analysis",
+        },
+      ],
+      suggested_exercises:
+        rawReport.recommendations || "No specific recommendations found.",
+      global_score: rawReport.global_score || null,
+    };
   };
 
   return (
@@ -53,28 +51,26 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
             variant="primary"
             size="small"
           >
-            Înapoi
+            Back
           </Button>
 
           <h1 className="text-5xl font-black">
-            <span className="text-red-500">P</span>
-            <span className="text-orange-500">a</span>
-            <span className="text-yellow-500">n</span>
-            <span className="text-green-500">o</span>
-            <span className="text-blue-500">u</span>
-            <span className="text-indigo-500">l</span>&nbsp;
-            <span className="text-purple-500">p</span>
-            <span className="text-pink-500">r</span>
-            <span className="text-rose-500">o</span>
-            <span className="text-red-500">f</span>
+            <span className="text-red-500">T</span>
             <span className="text-orange-500">e</span>
-            <span className="text-yellow-500">s</span>
+            <span className="text-yellow-500">a</span>
+            <span className="text-green-500">c</span>
+            <span className="text-blue-500">h</span>
+            <span className="text-indigo-500">e</span>
+            <span className="text-purple-500">r</span>&nbsp;
+            <span className="text-pink-500">D</span>
+            <span className="text-rose-500">a</span>
+            <span className="text-red-500">s</span>
+            <span className="text-orange-500">h</span>
+            <span className="text-yellow-500">b</span>
             <span className="text-green-500">o</span>
-            <span className="text-blue-500">r</span>
-            <span className="text-indigo-500">u</span>
-            <span className="text-purple-500">l</span>
-            <span className="text-pink-500">u</span>
-            <span className="text-rose-500">i</span>
+            <span className="text-blue-500">a</span>
+            <span className="text-indigo-500">r</span>
+            <span className="text-purple-500">d</span>
           </h1>
 
           <div className="w-32"></div>
@@ -87,7 +83,7 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
                 <Users className="w-8 h-8 text-blue-500" />
               </div>
               <div>
-                <p className="text-gray-600 font-semibold">Total elevi</p>
+                <p className="text-gray-600 font-semibold">Total Students</p>
                 <p className="text-4xl font-black text-gray-800">
                   {totalStudents}
                 </p>
@@ -101,7 +97,7 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
                 <TrendingUp className="w-8 h-8 text-green-500" />
               </div>
               <div>
-                <p className="text-gray-600 font-semibold">Acuratețe medie</p>
+                <p className="text-gray-600 font-semibold">Average Accuracy</p>
                 <p className="text-4xl font-black text-gray-800">
                   {avgAccuracy}%
                 </p>
@@ -115,7 +111,7 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
                 <Award className="w-8 h-8 text-orange-500" />
               </div>
               <div>
-                <p className="text-gray-600 font-semibold">Total exerciții</p>
+                <p className="text-gray-600 font-semibold">Total Exercises</p>
                 <p className="text-4xl font-black text-gray-800">
                   {totalExercises}
                 </p>
@@ -126,9 +122,7 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
 
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-yellow-400 px-6 py-4">
-            <h2 className="text-2xl font-black text-white">
-              Progresul elevilor
-            </h2>
+            <h2 className="text-2xl font-black text-white">Student Progress</h2>
           </div>
 
           <div className="overflow-x-auto">
@@ -136,13 +130,13 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
               <thead className="bg-gray-50">
                 <tr>
                   {[
-                    "Nume",
-                    "Vârstă",
-                    "Total exerciții",
-                    "Reușite",
-                    "Acuratețe medie",
-                    "Ultima activitate",
-                    "Progres",
+                    "Name",
+                    "Age",
+                    "Total Exercises",
+                    "Successful",
+                    "Average Accuracy",
+                    "Last Active",
+                    "Progress",
                   ].map((col) => (
                     <th
                       key={col}
@@ -154,67 +148,88 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {mockStudents.map((student) => (
-                  <tr
-                    key={student.id}
-                    className="hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => {
-                      setSelectedStudent(student.name);
-                      setAnalysisData(mockAnalysis);
-                      setIsModalOpen(true);
-                    }}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold">
-                          {student.name.charAt(0)}
+                {mockStudents.map((student) => {
+                  const report =
+                    reports.find(
+                      (r) =>
+                        r.student_id === student.id ||
+                        r.student_name === student.name
+                    ) || null;
+
+                  return (
+                    <tr
+                      key={student.id}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedStudent(student.name);
+
+                        const normalized = normalizeReport(report);
+
+                        if (normalized) setAnalysisData(normalized);
+                        else
+                          setAnalysisData({
+                            summary:
+                              "There is no AI report yet for this student. Encourage them to complete their exercises.",
+                            errors: [],
+                            suggested_exercises:
+                              "Once the student completes the exercises, personalized recommendations will appear here.",
+                          });
+
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">
+                            {student.name.charAt(0)}
+                          </div>
+                          <p className="text-md font-semibold text-gray-800">
+                            {student.name}
+                          </p>
                         </div>
-                        <p className="text-md font-semibold text-gray-800">
-                          {student.name}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700 font-medium">
-                      {student.age} ani
-                    </td>
-                    <td className="px-6 py-4 text-gray-700 font-medium">
-                      {student.totalExercises}
-                    </td>
-                    <td className="px-6 py-4 text-gray-700 font-medium">
-                      {student.successfulExercises}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-bold ${
-                          student.averageAccuracy >= 85
-                            ? "bg-green-100 text-green-500"
-                            : student.averageAccuracy >= 70
-                            ? "bg-yellow-100 text-yellow-500"
-                            : "bg-red-100 text-red-500"
-                        }`}
-                      >
-                        {student.averageAccuracy}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 text-sm">
-                      {new Date(student.lastActive).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-blue-200 to-blue-500 rounded-full transition-all duration-500"
-                          style={{
-                            width: `${
-                              (student.successfulExercises /
-                                student.totalExercises) *
-                              100
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 text-gray-700 font-medium">
+                        {student.age} yrs
+                      </td>
+                      <td className="px-6 py-4 text-gray-700 font-medium">
+                        {student.totalExercises}
+                      </td>
+                      <td className="px-6 py-4 text-gray-700 font-medium">
+                        {student.successfulExercises}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-bold ${
+                            student.averageAccuracy >= 85
+                              ? "bg-green-100 text-green-500"
+                              : student.averageAccuracy >= 70
+                              ? "bg-yellow-100 text-yellow-500"
+                              : "bg-red-100 text-red-500"
+                          }`}
+                        >
+                          {student.averageAccuracy}%
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 text-sm">
+                        {new Date(student.lastActive).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-blue-200 to-blue-500 rounded-full transition-all duration-500"
+                            style={{
+                              width: `${
+                                (student.successfulExercises /
+                                  student.totalExercises) *
+                                100
+                              }%`,
+                            }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -222,7 +237,7 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h3 className="text-2xl font-black text-gray-800 mb-6">
-            Rezumat performanță
+            Performance Summary
           </h3>
           <div className="grid md:grid-cols-5 gap-4">
             {mockStudents.map((student) => (

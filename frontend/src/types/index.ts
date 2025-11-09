@@ -11,7 +11,7 @@ export interface Student {
 export interface Exercise {
   id: string;
   studentId: string;
-  type: 'read-aloud' | 'listen-write';
+  type: "read-aloud" | "listen-write";
   sentence: string;
   accuracy: number;
   timestamp: string;
@@ -21,4 +21,12 @@ export interface FeedbackMessage {
   title: string;
   message: string;
   emoji: string;
+}
+
+export interface ExerciseResult {
+  type: "stt" | "tts";
+  sentence: string;
+  spokenText?: string;
+  writtenText?: string;
+  score: number;
 }

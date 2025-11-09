@@ -1,37 +1,38 @@
+-- ✅ Set 1 — Easy
 INSERT INTO sentences (text, level) VALUES
-('Pisica doarme pe perna moale.', 'usor'),
-('Băiatul sare peste balta mică.', 'usor'),
-('Ana are o rochie roșie.', 'usor'),
-('Mărul este dulce și roșu.', 'usor'),
-('Câinele latră la poartă.', 'usor'),
-('Bunica face o supă caldă.', 'usor'),
-('Țânțarul zboară lângă lampă.', 'usor'),
-('Ceasul ticăie pe perete.', 'usor'),
-('Mama citește o carte frumoasă.', 'usor'),
-('Fetița desenează o floare galbenă.', 'usor');
+('The dog runs in the yard.', 'easy'),
+('The sun shines in the sky.', 'easy'),
+('A bird sits on the tree.', 'easy'),
+('Tom drinks cold water.', 'easy'),
+('The girl likes her blue ball.', 'easy'),
+('Dad cooks a tasty meal.', 'easy'),
+('The baby plays with a small toy.', 'easy'),
+('My sister draws a big heart.', 'easy'),
+('The car stops at the light.', 'easy'),
+('The cat looks out the window.', 'easy');
 
--- 🟡 Set 2 – Nivel mediu (clasele II–III)
+-- ✅ Set 2 — Medium
 INSERT INTO sentences (text, level) VALUES
-('Gheorghe merge la grădina zoologică.', 'mediu'),
-('Cei mici joacă șah în curte.', 'mediu'),
-('Ciorile zboară deasupra orașului.', 'mediu'),
-('În frigider se află brânză și legume.', 'mediu'),
-('Copiii au găsit o ciupercă uriașă.', 'mediu'),
-('Fratele meu citește zilnic o poveste.', 'mediu'),
-('Vântul bate tare prin pădure.', 'mediu'),
-('Plouă încet, dar florile zâmbesc.', 'mediu'),
-('Căprioara fuge speriată prin iarbă.', 'mediu'),
-('Gheata stângă este mai strâmtă decât cealaltă.', 'mediu');
+('The children are building a tall sandcastle on the beach.', 'medium'),
+('A strong breeze moves the leaves across the playground.', 'medium'),
+('Mia found a shiny shell during her walk.', 'medium'),
+('The teacher showed us how to fix the broken puzzle.', 'medium'),
+('A squirrel quickly climbed up the old oak tree.', 'medium'),
+('Liam reads a new chapter every evening before bed.', 'medium'),
+('The bakery smells sweet when the bread is ready.', 'medium'),
+('The puppy follows its owner through the garden.', 'medium'),
+('A colorful kite dances high above the field.', 'medium'),
+('The classroom becomes quiet when the bell rings.', 'medium');
 
--- 🔵 Set 3 – Nivel avansat (clasele III–IV)
+-- ✅ Set 3 — Advanced
 INSERT INTO sentences (text, level) VALUES
-('Șerban și-a pierdut creionul galben.', 'avansat'),
-('Cei trei cerbi au coborât din pădure.', 'avansat'),
-('Giulia și George merg în excursie la munte.', 'avansat'),
-('Țăranul își ară ogorul dis-de-dimineață.', 'avansat'),
-('Profesorul explică lecția cu răbdare.', 'avansat'),
-('Călătorul a găsit adăpost lângă cetate.', 'avansat'),
-('Ghețarul strălucește sub soarele de iarnă.', 'avansat'),
-('În muzeu se aud pașii vizitatorilor curioși.', 'avansat'),
-('Ciocănitoarea bate ritmic în trunchiul copacului.', 'avansat'),
-('Țestoasa traversează încet aleea din parc.', 'avansat');
+('The curious scientist observed the tiny crystals under a bright microscope.', 'advanced'),
+('During the storm, the branches swayed rhythmically against the glowing sky.', 'advanced'),
+('Oliver discovered an ancient map hidden inside a dusty library book.', 'advanced'),
+('The adventurous twins traveled across the valley to explore forgotten ruins.', 'advanced'),
+('A shimmering reflection appeared on the surface of the quiet lake.', 'advanced'),
+('The orchestra practiced a challenging melody for the upcoming concert.', 'advanced'),
+('A gentle whisper echoed through the hallway of the old mansion.', 'advanced'),
+('Sophia carefully arranged the delicate flowers into a beautiful bouquet.', 'advanced'),
+('Lightning flashed dramatically behind the tall mountain range.', 'advanced'),
+('The young author wrote a captivating story full of magic and mystery.', 'advanced');

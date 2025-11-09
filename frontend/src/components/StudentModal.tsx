@@ -30,7 +30,7 @@ export const StudentModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 p-8 relative animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full mx-4 p-8 relative animate-fade-in">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-red-500 transition"
@@ -38,13 +38,13 @@ export const StudentModal = ({
           <X className="w-6 h-6" />
         </button>
 
-        <h2 className="text-3xl font-black text-center text-blue-500 mb-8">
+        <h2 className="text-3xl font-black text-center text-blue-400 mb-8">
           {studentName}
         </h2>
         <p className="text-gray-600 mb-6 italic">{analysis.summary}</p>
 
         <h3 className="text-xl font-bold text-red-500 mb-2">
-          Erori identificate:
+          Identified Errors:
         </h3>
         <ul className="space-y-4 mb-6">
           {analysis.errors.map((err, i) => (
@@ -53,8 +53,8 @@ export const StudentModal = ({
               className="bg-red-50 border-l-4 border-red-300 p-4 rounded-lg"
             >
               <p className="font-semibold text-gray-800">
-                <span className="text-red-500">Așteptat:</span> {err.expected} |{" "}
-                <span className="text-red-500">Pronunțat:</span> {err.spoken}
+                <span className="text-red-500">Expected:</span> {err.expected} |{" "}
+                <span className="text-red-500">Spoken:</span> {err.spoken}
               </p>
               <p className="text-sm text-gray-700 mt-1">
                 <strong>{err.type}</strong>: {err.tip}
@@ -64,7 +64,7 @@ export const StudentModal = ({
         </ul>
 
         <h3 className="text-xl font-bold text-green-500 mb-2">
-          Recomandări pentru exerciții:
+          Exercise Recommendations:
         </h3>
         <p className="text-gray-700 whitespace-pre-line">
           {analysis.suggested_exercises}

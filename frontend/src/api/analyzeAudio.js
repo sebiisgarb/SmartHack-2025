@@ -4,7 +4,7 @@ export async function analyzeAudio(audioFile, targetText) {
   formData.append("target_text", targetText);
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/analyze_audio", {
+    const response = await fetch("http://127.0.0.1:8001/analyze_audio", {
       method: "POST",
       body: formData,
     });

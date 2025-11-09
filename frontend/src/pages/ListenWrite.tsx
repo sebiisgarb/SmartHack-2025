@@ -1,39 +1,87 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Play, Send, Home, RotateCw } from "lucide-react";
 import { Button } from "../components/Button";
 import { Mascot } from "../components/Mascot";
 import { Confetti } from "../components/Confetti";
-import { getFeedbackMessage, getRandomSentence } from "../utils/feedback";
+import { getFeedbackMessage } from "../utils/feedback";
+import { fetchSentences_tts } from "../api/sentences";
+import { ExerciseResult } from "../types";
 
 interface ListenWriteProps {
   onNavigate: (page: string) => void;
   onExerciseComplete: () => void;
+  onExerciseResult: (result: ExerciseResult) => void;
+  currentExercise: number;
+  totalExercises: number;
 }
 
 export const ListenWrite = ({
   onNavigate,
   onExerciseComplete,
+  onExerciseResult,
+  currentExercise,
+  totalExercises,
 }: ListenWriteProps) => {
-  const [sentence, setSentence] = useState(getRandomSentence());
+  const [sentence, setSentence] = useState<string>("");
+  const [sentencesData, setSentencesData] = useState<any>(null);
   const [userInput, setUserInput] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasResult, setHasResult] = useState(false);
   const [accuracy, setAccuracy] = useState(0);
   const [feedback, setFeedback] = useState(getFeedbackMessage(0));
 
-  const handlePlayAudio = () => {
+  useEffect(() => {
+    async function loadSentences() {
+      const data = await fetchSentences_tts();
+      if (data) {
+        setSentencesData(data);
+        pickRandomSentence(data);
+      }
+    }
+    loadSentences();
+  }, []);
+
+  const pickRandomSentence = (data: any) => {
+    if (!data) return;
+    const levels = Object.keys(data);
+    const randomLevel = levels[Math.floor(Math.random() * levels.length)];
+    const sentences = data[randomLevel].sentences || [data[randomLevel].text];
+    const randomSentence =
+      sentences[Math.floor(Math.random() * sentences.length)];
+    setSentence(randomSentence);
+  };
+
+  const handlePlayAudio = async () => {
+    if (!sentence) return;
     setIsPlaying(true);
-    const utterance = new SpeechSynthesisUtterance(sentence);
-    utterance.rate = 0.8;
-    utterance.pitch = 1.2;
-    utterance.onend = () => setIsPlaying(false);
-    speechSynthesis.speak(utterance);
+
+    try {
+      const formData = new FormData();
+      formData.append("text", sentence);
+
+      const response = await fetch("http://127.0.0.1:8001/generate_audio", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Error playing audio");
+
+      const blob = await response.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+
+      audio.onended = () => setIsPlaying(false);
+      audio.play();
+    } catch (err) {
+      console.error("Error playing sentence:", err);
+      alert("Could not play the audio sentence.");
+      setIsPlaying(false);
+    }
   };
 
   const calculateAccuracy = (input: string, target: string): number => {
     const inputWords = input.toLowerCase().trim().split(/\s+/);
     const targetWords = target.toLowerCase().trim().split(/\s+/);
-
     if (inputWords.length === 0) return 0;
 
     let matches = 0;
@@ -50,11 +98,17 @@ export const ListenWrite = ({
     const newFeedback = getFeedbackMessage(calculatedAccuracy);
     setFeedback(newFeedback);
     setHasResult(true);
-    onExerciseComplete();
+
+    onExerciseResult({
+      type: "tts",
+      sentence,
+      writtenText: userInput,
+      score: calculatedAccuracy,
+    });
   };
 
   const handleTryAgain = () => {
-    setSentence(getRandomSentence());
+    if (sentencesData) pickRandomSentence(sentencesData);
     setUserInput("");
     setHasResult(false);
     setIsPlaying(false);
@@ -72,28 +126,30 @@ export const ListenWrite = ({
             variant="secondary"
             size="small"
           >
-            Acasă
+            Home
           </Button>
 
           <h1 className="text-5xl font-black">
-            <span className="text-red-500">A</span>
-            <span className="text-orange-500">s</span>
-            <span className="text-yellow-500">c</span>
-            <span className="text-green-500">u</span>
-            <span className="text-blue-500">l</span>
-            <span className="text-indigo-500">t</span>
-            <span className="text-purple-500">ă</span>&nbsp;
-            <span className="text-pink-500">ș</span>
-            <span className="text-rose-500">i</span>&nbsp;
-            <span className="text-red-500">s</span>
-            <span className="text-yellow-500">c</span>
-            <span className="text-green-500">r</span>
-            <span className="text-blue-500">i</span>
-            <span className="text-indigo-500">e</span>
+            <span className="text-red-500">L</span>
+            <span className="text-orange-500">i</span>
+            <span className="text-yellow-500">s</span>
+            <span className="text-green-500">t</span>
+            <span className="text-blue-500">e</span>
+            <span className="text-indigo-500">n</span>&nbsp;
+            <span className="text-purple-500">&</span>&nbsp;
+            <span className="text-pink-500">W</span>
+            <span className="text-rose-500">r</span>
+            <span className="text-red-500">i</span>
+            <span className="text-yellow-500">t</span>
+            <span className="text-green-500">e</span>
           </h1>
 
           <div className="w-32"></div>
         </div>
+
+        <p className="text-center text-gray-500 font-semibold">
+          Exercise {currentExercise + 1} of {totalExercises}
+        </p>
 
         <div className="bg-white rounded-3xl p-12 shadow-2xl space-y-8">
           <div className="flex justify-center">
@@ -101,7 +157,7 @@ export const ListenWrite = ({
               message={
                 hasResult
                   ? feedback.title
-                  : "Ascultă cu atenție și scrie ce auzi!"
+                  : "Listen carefully and write what you hear!"
               }
               emoji={hasResult ? feedback.emoji : "🐶"}
             />
@@ -124,21 +180,21 @@ export const ListenWrite = ({
               </div>
 
               {isPlaying && (
-                <p className="text-2xl font-bold text-center text-gray-600 animate-pulse">
-                  Se redă...
+                <p className="text-lg font-bold text-center text-gray-600 animate-pulse">
+                  Playing the sentence...
                 </p>
               )}
 
               <div className="space-y-4">
                 <label className="text-2xl font-bold pb-2 text-gray-700 block text-center">
-                  Scrie ce ai auzit:
+                  Type what you heard:
                 </label>
                 <input
                   type="text"
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
                   className="w-full px-6 py-3 text-2xl font-semibold rounded-2xl border-4 border-yellow-300 focus:border-yellow-500 focus:outline-none bg-yellow-50"
-                  placeholder="Scrie aici..."
+                  placeholder="Type here..."
                 />
               </div>
 
@@ -150,7 +206,7 @@ export const ListenWrite = ({
                   size="medium"
                   disabled={!userInput.trim()}
                 >
-                  Trimite răspunsul
+                  Submit Answer
                 </Button>
               </div>
             </>
@@ -164,7 +220,7 @@ export const ListenWrite = ({
                     {accuracy}%
                   </p>
                   <p className="text-2xl font-bold text-gray-700">
-                    Scor de acuratețe
+                    Accuracy Score
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
                     <div
@@ -178,13 +234,13 @@ export const ListenWrite = ({
               <div className="space-y-4">
                 <div className="bg-green-50 rounded-2xl p-6 border-2 border-green-200">
                   <p className="text-xl font-bold text-gray-600 mb-2">
-                    Răspuns corect:
+                    Correct answer:
                   </p>
                   <p className="text-lg font-bold text-gray-800">{sentence}</p>
                 </div>
                 <div className="bg-blue-50 rounded-2xl p-6 border-2 border-blue-200">
                   <p className="text-xl font-bold text-gray-600 mb-2">
-                    Răspunsul tău:
+                    Your answer:
                   </p>
                   <p className="text-lg font-bold text-gray-800">{userInput}</p>
                 </div>
@@ -198,12 +254,21 @@ export const ListenWrite = ({
 
               <div className="flex justify-center">
                 <Button
-                  onClick={handleTryAgain}
-                  icon={RotateCw}
+                  onClick={() => {
+                    if (currentExercise + 1 < totalExercises) {
+                      onExerciseComplete();
+                      handleTryAgain();
+                    } else {
+                      onExerciseComplete();
+                      onNavigate("home");
+                    }
+                  }}
                   variant="success"
                   size="medium"
                 >
-                  Încearcă o altă propoziție
+                  {currentExercise + 1 < totalExercises
+                    ? "Go to the next exercise"
+                    : "Finish the test"}
                 </Button>
               </div>
             </div>
